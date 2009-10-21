@@ -16,7 +16,7 @@ YAWF::register(
 
 sub _col {
   my($n, $v) = @_;
-  if ($n =~ /net_(ip|mask|gw)/) {
+  if ($n =~ /net_(ip|mask|gw|dns)/) {
     a href => '#', onclick => sprintf('return conf_text("ip", 0, "%s", "%s", this)', $n, $v), $v;
   }
   if ($n eq 'ntp_server') {
@@ -37,7 +37,7 @@ sub ipclock
   my $self = shift;
   my @array;
 
-  my ($ip, $mask, $gw);
+  my ($ip, $mask, $gw, $dns);
   open(FILE, '/etc/conf.d/ip');
   @array = <FILE>;
   for my $i (0..$#array)
@@ -45,6 +45,7 @@ sub ipclock
     $array[$i] =~ m/^net_ip="(.*)"/ ? ($ip = $1) : ();
     $array[$i] =~ m/^net_mask="(.*)"/ ? ($mask = $1) : ();
     $array[$i] =~ m/^net_gw="(.*)"/ ? ($gw = $1) : ();
+    $array[$i] =~ m/^net_dns="(.*)"/ ? ($dns = $1) : ();
   }
   close FILE;
 
@@ -76,6 +77,7 @@ sub ipclock
   Tr; th "Address"; td; _col 'net_ip', $ip; end; end;
   Tr; th "Subnet mask:"; td; _col 'net_mask', $mask; end; end;
   Tr; th "Gateway"; td; _col 'net_gw', $gw; end; end;
+  Tr; th "DNS server"; td; _col 'net_dns', $dns; end; end;
   Tr class => 'empty'; th colspan => 2; end; end;
   Tr; th colspan => 2, "Clock";
   Tr; th colspan => 2; i "(effective after reboot)"; end;
@@ -271,6 +273,7 @@ sub set_ip {
     { name => 'net_ip', required => 0, regex => [ qr/\b(?:\d{1,3}\.){3}\d{1,3}\b/ ], 0},
     { name => 'net_mask', required => 0, regex => [ qr/\b(?:\d{1,3}\.){3}\d{1,3}\b/ ], 0},
     { name => 'net_gw', required => 0, regex => [ qr/\b(?:\d{1,3}\.){3}\d{1,3}\b/ ], 0},
+    { name => 'net_dns', required => 0, regex => [ qr/\b(?:\d{1,3}\.){3}\d{1,3}\b/ ], 0},
   );
   return 404 if $f->{_err};
 
