@@ -69,6 +69,19 @@ sub ipclock
   }
   close FILE;
 
+  my $sync_url = 'none';
+  my $sync_st = '16';
+  my $ntpq = `ntpq -p`;
+  my @lines = split "\n", $ntpq;
+
+  for (@lines)
+  {
+    if ($_ =~ /^\*(\S+)\s+\S+\s+(\d+).*/)
+    {
+      $sync_url = $1;
+      $sync_st = $2;
+    }
+  }
   $self->htmlHeader(page => 'ipclock', section => 'timezonde', title => "Timezone configuration");
 
   table;
@@ -79,11 +92,12 @@ sub ipclock
   Tr; th "Gateway"; td; _col 'net_gw', $gw; end; end;
   Tr; th "DNS server"; td; _col 'net_dns', $dns; end; end;
   Tr class => 'empty'; th colspan => 2; end; end;
-  Tr; th colspan => 2, "Clock";
-  Tr; th colspan => 2; i "(effective after reboot)"; end;
-  Tr; th "Current"; td `date`;
-  Tr; th "time zone"; td; _col 'timezone', $tz; end;
-  Tr; th "NTP servers"; td; _col 'ntp_server', $ntp_server; end;
+  Tr; th colspan => 3, "Clock";
+  Tr; th colspan => 3; "(effective after reboot)"; end;
+  Tr; th rowspan => 2, "Current"; td colspan => 2, `date`;
+  Tr; td $sync_url; td "stratum: $sync_st"; end;
+  Tr; th "time zone"; td colspan => 2; _col 'timezone', $tz; end;
+  Tr; th "NTP servers"; td colspan => 2; _col 'ntp_server', $ntp_server; end;
   end;
   end;
 
