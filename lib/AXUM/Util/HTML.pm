@@ -6,7 +6,7 @@ use warnings;
 use YAWF ':html';
 use Exporter 'import';
 
-our @EXPORT = qw| htmlHeader htmlFooter OEMFullProductName |;
+our @EXPORT = qw| htmlHeader htmlFooter OEMFullProductName OEMShortProductName |;
 
 
 sub htmlHeader {
@@ -41,6 +41,14 @@ sub htmlFooter {
 
 sub OEMFullProductName {
   open my $F, "/var/lib/axum/OEMFullProductName" or die "Couldn't open file /var/lib/axum/OEMFullProductName: $!";
+  my $n =  <$F>;
+  close FILE;
+  $n =~ s/\s+$//;
+  return $n;
+}
+
+sub OEMShortProductName {
+  open my $F, "/var/lib/axum/OEMShortProductName" or die "Couldn't open file /var/lib/axum/OEMFullProductName: $!";
   my $n =  <$F>;
   close FILE;
   $n =~ s/\s+$//;

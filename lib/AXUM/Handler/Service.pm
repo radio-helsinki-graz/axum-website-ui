@@ -23,7 +23,7 @@ sub service {
   $self->htmlHeader(title => $self->OEMFullProductName().' service pages', page => 'service');
   table;
    Tr; th colspan => 2, $self->OEMFullProductName().' service'; end;
-   Tr; th 1; td; a href => '/service/versions?pkg=axum', 'Package versions'; end; end;
+   Tr; th 1; td; a href => '/service/versions?pkg='.$self->OEMShortProductName(), 'Package versions'; end; end;
    Tr; th 2; td; a href => '#', onclick => "window.location = 'http://'+window.location.host+':6565'", 'Download backup'; end; end;
    Tr; th 3; td; a href => '/service/password', 'Change password'; end; end;
   end;
