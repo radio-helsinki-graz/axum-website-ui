@@ -7,6 +7,7 @@ use YAWF ':html';
 
 YAWF::register(
   qr{ipclock} => \&ipclock,
+  qr{setdatetime} => \&setdatetime,
   qr{ajax/tz_lst} => \&timezone_lst,
   qr{ajax/set_tz} => \&set_tz,
   qr{ajax/ip} => \&set_ip,
@@ -97,7 +98,15 @@ sub ipclock
    Tr; td $sync_url; td "stratum: $sync_st"; end;
    Tr; th "time zone"; td colspan => 2; _col 'timezone', $tz; end;
    Tr; th style => 'height: 100px; background: url("/images/table_head_100.png")', "NTP Servers"; td colspan => 2; _col 'ntp_server', $ntp_server; end;
-  end;
+   Tr;
+    th "Set date/time";
+    td colspan => 2;
+     input type=>'Text', name=>'datetime', size=>'25', maxlength=>'25', id=>'datetime', class => 'hidden';
+     a href => "javascript: NewCssCal('datetime', 'yyyymmdd','dropdown',true,24,false)";
+      img width=>'16', height=>'16', alt=>'Pick a date', src=>'images/cal.gif';
+     end;
+    end;
+   end;
   end;
 
   $self->htmlFooter;
@@ -332,6 +341,21 @@ sub set_ntp {
   _col 'ntp_server', $f->{ntp_server};
 }
 
+sub setdatetime {
+  my $self = shift;
+
+  my $f = $self->formValidate(
+    { name => 'date', required => '1', regex => [ qr/\d{4}-\d{2}-\d{2}/ ]},
+    { name => 'time', required => '1', regex => [ qr/\d{2}:\d{2}:\d{2}/ ]},
+  );
+  return 404 if $f->{_err};
+
+  #set date time from here...
+  my $cmd = "date -s \"$f->{date} $f->{time}\"";
+  my $cmdstdout = `$cmd`;
+
+  $self->resRedirect('/ipclock');
+}
 
 1;
 
