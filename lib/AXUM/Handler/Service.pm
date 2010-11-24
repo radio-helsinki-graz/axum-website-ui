@@ -184,7 +184,7 @@ sub upload_logo {
     binmode LOGO_FILE;
     print LOGO_FILE @{$f->{field}->{logo}->{value}};
     close LOGO_FILE;
-    $self->resRedirect('/service/upload');
+    $self->resRedirect('/service/upload', 'post');
   } else {
      return 404;
   }
