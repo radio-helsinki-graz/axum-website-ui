@@ -10,6 +10,8 @@ YAWF::register(
   qr{service} => \&service,
   qr{service/versions} => \&versions,
   qr{service/password} => \&password,
+  qr{service/upload} => \&upload,
+  qr{service/upload_logo} => \&upload_logo,
   qr{ajax/service} => \&ajax,
   qr{ajax/service/account} => \&set_account,
 );
@@ -26,6 +28,7 @@ sub service {
    Tr; th 1; td; a href => '/service/versions?pkg='.$self->OEMShortProductName(), 'Package versions'; end; end;
    Tr; th 2; td; a href => '#', onclick => "window.location = 'http://'+window.location.host+':6565'", 'Download backup'; end; end;
    Tr; th 3; td; a href => '/service/password', 'Change password'; end; end;
+   Tr; th 4; td; a href => '/service/upload', 'Upload logo'; end; end;
   end;
   $self->htmlFooter;
 }
@@ -143,5 +146,46 @@ sub set_account {
   _password_col $f->{field}, { line => $f->{item}, user => $1, password => $2};
 }
 
+sub upload {
+  my $self = shift;
+
+  $self->htmlHeader(title => $self->OEMFullProductName().' service pages', page => 'service', section => 'upload');
+  form action => 'upload_logo', method => 'post', enctype => "multipart/form-data";
+   table;
+    Tr; th 'Select logo file (logo.png, 256x150)'; end;
+    Tr;
+     td;
+      input type => 'file', size => 40, name => "logo";
+     end;
+    end;
+    Tr;
+     td;
+      input type => 'submit', value => 'Upload';
+     end;
+    end;
+    Tr;
+     td;
+      txt 'Current used logo (resized to 256x150):';br;
+      img src => '/images/logo.png', alt => 'logo', width => '256px', height => '150px', style => 'border: 1px dashed #C0C0C0';
+     end;
+    end;
+   end;
+  end;
+  $self->htmlFooter;
+}
+
+sub upload_logo {
+  my $self = shift;
+  my $f = $self->{_YAWF}->{Req}->{c}->{'CGI::Minimal'};
+
+  if ($f->{field_names}[0] eq 'logo') {
+    open(LOGO_FILE, ">/var/lib/axum/skins/meters/logo.png") or die $!;
+    binmode LOGO_FILE;
+    print LOGO_FILE @{$f->{field}->{logo}->{value}};
+    close LOGO_FILE;
+  } else {
+     return 404;
+  }
+}
 1;
 
