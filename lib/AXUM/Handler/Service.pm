@@ -155,12 +155,13 @@ sub upload {
     Tr; th 'Select logo file (logo.png, 256x150)'; end;
     Tr;
      td;
-      input type => 'file', size => 40, name => "logo";
+      input type => 'file', accept => 'image/png', size => 60, name => "logo";
      end;
     end;
     Tr;
      td;
-      input type => 'submit', value => 'Upload';
+      input type => 'submit', value => 'Upload'; br;
+      i '(Requires a surface reboot to be used)';
      end;
     end;
     Tr;
@@ -183,6 +184,7 @@ sub upload_logo {
     binmode LOGO_FILE;
     print LOGO_FILE @{$f->{field}->{logo}->{value}};
     close LOGO_FILE;
+    $self->resRedirect('/service/upload');
   } else {
      return 404;
   }
