@@ -12,6 +12,7 @@ YAWF::register(
   qr{ajax/set_tz} => \&set_tz,
   qr{ajax/ip} => \&set_ip,
   qr{ajax/ntp} => \&set_ntp,
+  qr{ajax/itf} => \&set_itf,
 );
 
 
@@ -30,6 +31,13 @@ sub _col {
   }
   if ($n eq 'timezone') {
     a href => '#', onclick => sprintf('return conf_tz(this)'), $v ? ($v) : ('Select timezone');
+  }
+  if (($n eq 'udp') or ($n eq 'tcp')) {
+    a href => '#', onclick => sprintf('return conf_text("itf", 0, "%s", "%s", this)', $n, $v), $v;
+  }
+  if ($n eq 'itf') {
+    my $itf_names = { 'ETH' => 'Ethernet', 'UDP' => 'UDP/IP', 'TCP' => 'TCP/IP'};
+    a href => '#', onclick => sprintf('return conf_select("itf", "1", "%s", "%s", this, "itf_list")', "itf", $v), $itf_names->{$v};
   }
 }
 
@@ -84,7 +92,48 @@ sub ipclock
     }
   }
 
+  open(FILE, '/etc/conf.d/axum-ui.conf');
+  @array = <FILE>;
+  my $eth = "-";
+  my $udp = "-";
+  my $tcp = "-";
+  my $itf = "ETH";
+  for my $i (0..$#array) {
+    if ($array[$i] =~ /^ETHARG="-e (eth\d+)"/) {
+      $eth = $1;
+    }
+    if ($array[$i] =~ /^UDPARG="-h ([a-z0-9-.]*)\.([a-z0-9]{2,3})(\:[0-9]{2,5})?"/) {
+      $udp  = "$1.$2$3";
+      if (not defined $3) {
+        $udp .= ":34848";
+      }
+    }
+    if ($array[$i] =~ /^TCPARG="-r ([a-z0-9-.]*)\.([a-z0-9]{2,3})(\:[0-9]{2,5})?"/) {
+      $tcp  = "$1.$2$3";
+      if (not defined $3) {
+        $tcp .= ":34848";
+      }
+    }
+    if ($array[$i] =~ /^ITF=\$(ETH|UDP|TCP)ARG/)
+    {
+      $itf = $1;
+    }
+  }
+  close FILE;
+
+  my $mac = "-";
+  if (`/sbin/ifconfig -a | grep $eth` =~ /HWaddr (.*)/) {
+    $mac = $1;
+  }
+
   $self->htmlHeader(page => 'ipclock', section => 'timezonde', title => "Timezone configuration");
+  div id => 'itf_list', class => 'hidden';
+   Select;
+    option value => 'ETH', 'Ethernet';
+    option value => 'UDP', 'UDP/IP';
+    option value => 'TCP', 'TCP/IP';
+   end;
+  end;
 
   table;
    Tr; th colspan => 2, style => 'height: 40px; background: url("/images/table_head_40.png")'; txt "IP\n"; i "(effective after reboot)"; end; end;
@@ -92,7 +141,35 @@ sub ipclock
    Tr; th "Subnet mask:"; td; _col 'net_mask', $mask; end; end;
    Tr; th "Gateway"; td; _col 'net_gw', $gw; end; end;
    Tr; th "DNS server"; td; _col 'net_dns', $dns; end; end;
-   Tr class => 'empty'; th colspan => 2; end; end;
+  end;
+  br;
+  table;
+   Tr; th colspan => 2, style => 'height: 40px; background: url("/images/table_head_40.png")'; txt "Pre-configured engine connections\n"; i "(effective after reboot)"; end; end;
+   Tr; th ''; th 'Address'; end;
+   Tr;
+    th 'Ethernet';
+    td "$eth - $mac";
+   end;
+   Tr;
+    th 'UDP/IP';
+    td; _col 'udp', $udp; end;
+    td style => 'text-align: left; background-color: transparent', class => 'empty'; i '<host>:<port>, default port is 34848'; end;
+   end;
+   Tr;
+    th 'TCP/IP';
+    td; _col 'tcp', $tcp; end;
+    td style => 'text-align: left; background-color: transparent'; i 'e.g. 192.168.0.200:34848'; end;
+   end;
+   Tr; th colspan => 2, 'Selected interface'; end;
+   Tr;
+    th 'MambaNet over';
+    td;
+     _col 'itf', $itf;
+    end;
+   end;
+  end;
+  br;
+  table;
    Tr; th colspan => 3, style => 'height: 40px; background: url("/images/table_head_40.png")'; txt "Clock\n"; i "(effective after reboot)"; end; end;
    Tr; th rowspan => 2, style => 'height: 40px; background: url("/images/table_head_40.png")', "Current"; td colspan => 2, `date`;
    Tr; td $sync_url; td "stratum: $sync_st"; end;
@@ -355,6 +432,35 @@ sub setdatetime {
   my $cmdstdout = `$cmd`;
 
   $self->resRedirect('/ipclock');
+}
+
+sub set_itf {
+  my $self = shift;
+
+  my $f = $self->formValidate(
+    { name => 'field', required => '1', template => 'asciiprint' },
+    { name => 'itf', required => '0', regex => [ qr/(ETH|UDP|TCP)/ ] },
+    { name => 'udp', required => '0', regex => [ qr/([a-z0-9-.]*)\.([a-z0-9]{2,3})(\:[0-9]{2,5})?/ ] },
+    { name => 'tcp', required => '0', regex => [ qr/([a-z0-9-.]*)\.([a-z0-9]{2,3})(\:[0-9]{2,5})?/ ] },
+  );
+  return 404 if $f->{_err};
+
+  my @array;
+  open(FILE, '/etc/conf.d/axum-ui.conf');
+  @array = <FILE>;
+  for my $i (0..$#array) {
+    $array[$i] =~ s/^ITF=\$(ETH|UDP|TCP)ARG/ITF=\$$f->{itf}ARG/ if defined $f->{itf};
+    $array[$i] =~ s/^UDPARG="-h (.*)"/UDPARG="-h $f->{udp}"/ if defined $f->{udp};
+    $array[$i] =~ s/^TCPARG="-r (.*)"/TCPARG="-r $f->{tcp}"/ if defined $f->{tcp};
+  }
+  my @result = grep(/[^\s]/,@array);
+  close FILE;
+
+  open(FILE, '>/etc/conf.d/axum-ui.conf');
+  print FILE @result;
+  close FILE;
+
+   _col $f->{field}, $f->{$f->{field}};
 }
 
 1;
