@@ -11,7 +11,7 @@ YAWF::register(
   qr{service/versions} => \&versions,
   qr{service/password} => \&password,
   qr{service/upload} => \&upload,
-  qr{service/upload_logo} => \&upload_logo,
+  qr{service/upload_image} => \&upload_image,
   qr{ajax/service} => \&ajax,
   qr{ajax/service/account} => \&set_account,
 );
@@ -146,43 +146,57 @@ sub set_account {
   _password_col $f->{field}, { line => $f->{item}, user => $1, password => $2};
 }
 
-sub upload {
-  my $self = shift;
-
-  $self->htmlHeader(title => $self->OEMFullProductName().' service pages', page => 'service', section => 'upload');
-  form action => 'upload_logo', method => 'post', enctype => "multipart/form-data";
+sub image_block {
+  my($n, $x, $y) = @_;
+  form action => 'upload_image', method => 'post', enctype => "multipart/form-data";
    table;
-    Tr; th 'Select logo file (logo.png, 256x150)'; end;
+    Tr; th "Select file ($n, ${x}x${y})"; end;
     Tr;
      td;
-      input type => 'file', accept => 'image/png', size => 60, name => "logo";
+      input type => 'file', accept => 'image/png', size => 60, name => "$n";
      end;
     end;
     Tr;
      td;
-      input type => 'submit', value => 'Upload'; br;
+      input type => 'submit', value => "Upload $n"; br;
       i '(Requires a surface reboot to be used)';
      end;
     end;
     Tr;
      td;
-      txt 'Current used logo (resized to 256x150):';br;
-      img src => '/images/logo.png', alt => 'logo', width => '256px', height => '150px', style => 'border: 1px dashed #C0C0C0';
+      txt "Current used $n (resized to ${x}x${y}):";br;
+      img src => "/images/$n", alt => "$n", width => "${x}px", height => "${y}px", style => 'border: 1px dashed #C0C0C0';
      end;
     end;
    end;
   end;
+}
+
+sub upload {
+  my $self = shift;
+
+  $self->htmlHeader(title => $self->OEMFullProductName().' service pages', page => 'service', section => 'upload');
+   image_block('logo.png', 256, 150);
+   for (1..8)
+   {
+    br;
+    image_block("redlight$_-on.png", 128, 94);
+    image_block("redlight$_-off.png", 128, 94);
+   }
   $self->htmlFooter;
 }
 
-sub upload_logo {
+sub upload_image {
   my $self = shift;
   my $f = $self->{_YAWF}->{Req}->{c}->{'CGI::Minimal'};
 
-  if ($f->{field_names}[0] eq 'logo') {
-    open(LOGO_FILE, ">/var/lib/axum/skins/meters/logo.png") or die $!;
+  if (($f->{field_names}[0] eq 'logo.png') or
+      ($f->{field_names}[0] =~ /redlight[1..8]-o[n|ff]/)) {
+
+    my $n = $f->{field_names}[0];
+    open(LOGO_FILE, ">/var/lib/axum/skins/meters/$n") or die $!;
     binmode LOGO_FILE;
-    print LOGO_FILE @{$f->{field}->{logo}->{value}};
+    print LOGO_FILE @{$f->{field}->{$n}->{value}};
     close LOGO_FILE;
     $self->resRedirect('/service/upload', 'post');
   } else {
