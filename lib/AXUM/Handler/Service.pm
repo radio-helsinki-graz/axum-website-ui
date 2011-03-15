@@ -191,7 +191,7 @@ sub upload_image {
   my $f = $self->{_YAWF}->{Req}->{c}->{'CGI::Minimal'};
 
   if (($f->{field_names}[0] eq 'logo.png') or
-      ($f->{field_names}[0] =~ /redlight[1..8]-o[n|ff]/)) {
+      ($f->{field_names}[0] =~ /redlight[1-8]-o[n|ff]/)) {
 
     my $n = $f->{field_names}[0];
     open(LOGO_FILE, ">/var/lib/axum/skins/meters/$n") or die $!;
