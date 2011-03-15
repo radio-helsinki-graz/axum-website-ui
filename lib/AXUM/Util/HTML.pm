@@ -28,6 +28,8 @@ sub htmlHeader {
      lit " &raquo; ";
      a href => '/', 'Main menu' if $o{page} eq 'home';
      a href => '/ipclock', 'IP/Clock configuration' if $o{page} eq 'ipclock';
+     a href => '/ipclock', 'Upload images' if $o{page} eq 'upload';
+     a href => '/ipclock', 'Set account' if $o{page} eq 'password';
      a href => '/service', 'Service' if $o{page} eq 'service';
     end;
     div id => 'content';
