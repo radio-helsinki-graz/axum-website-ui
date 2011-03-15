@@ -28,7 +28,7 @@ sub service {
    Tr; th 1; td; a href => '/service/versions?pkg='.$self->OEMShortProductName(), 'Package versions'; end; end;
    Tr; th 2; td; a href => '#', onclick => "window.location = 'http://'+window.location.host+':6565'", 'Download backup'; end; end;
    Tr; th 3; td; a href => '/service/password', 'Change password'; end; end;
-   Tr; th 4; td; a href => '/service/upload', 'Upload logo'; end; end;
+   Tr; th 4; td; a href => '/service/upload', 'Upload images'; end; end;
   end;
   $self->htmlFooter;
 }
